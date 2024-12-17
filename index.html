@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script src="birthday-cake.js"></script>
+  <link rel="stylesheet" type="text/css" href="birthday-cake.css"/>
+  <title>Birthday Cake</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <div class="cake" onClick="putOutCandles();">
+    <div class="icing">
+      <div class="drip"></div>
+      <div class="drip"></div>
+      <div class="drip"></div>
+      <div class="drip"></div>
+      <div class="drip"></div>
+    </div>
+    <div class="layer top"></div>
+    <div class="layer middle"></div>
+    <div class="layer bottom"></div>
+  </div>
+  
+  <div id="message_container" class="message"></div>
+  
+  <canvas id="canvas"></canvas>
+
+  <script>
+    // Global variables for confetti
+    let W = window.innerWidth;
+    let H = window.innerHeight;
+    const canvas = document.getElementById("canvas");
+    const context = canvas.getContext("2d");
+    const maxConfettis = 150;
+    const particles = [];
+
+    // Define possible confetti colors
+    const possibleColors = [
+      "DodgerBlue", "OliveDrab", "Gold", "Pink", "SlateBlue", "LightBlue",
+      "Violet", "PaleGreen", "SteelBlue", "SandyBrown", "Chocolate", "Crimson"
+    ];
+
+    // Function to generate a random number within a range
+    function randomFromTo(from, to) {
+      return Math.floor(Math.random() * (to - from + 1) + from);
+    }
+
+    // Confetti particle constructor
+    function confettiParticle() {
+      this.x = Math.random() * W;
+      this.y = Math.random() * H - H;
+      this.r = randomFromTo(11, 33);
+      this.d = Math.random() * maxConfettis + 11;
+      this.color = possibleColors[Math.floor(Math.random() * possibleColors.length)];
+      this.tilt = Math.floor(Math.random() * 33) - 11;
+      this.tiltAngleIncremental = Math.random() * 0.07 + 0.05;
+      this.tiltAngle = 0;
+
+      this.draw = function() {
+        context.beginPath();
+        context.lineWidth = this.r / 2;
+        context.strokeStyle = this.color;
+        context.moveTo(this.x + this.tilt + this.r / 3, this.y);
+        context.lineTo(this.x + this.tilt, this.y + this.tilt + this.r / 5);
+        context.stroke();
+      };
+    }
+
+    // Main confetti animation loop
+    function Draw() {
+      context.clearRect(0, 0, W, H);
+
+      particles.forEach(particle => {
+        particle.draw();
+        particle.tiltAngle += particle.tiltAngleIncremental;
+        particle.y += (Math.cos(particle.d) + 3 + particle.r / 2) / 2;
+        particle.tilt = Math.sin(particle.tiltAngle) * 15;
+
+        if (particle.y <= H) return;
+
+        particle.x = Math.random() * W;
+        particle.y = -30;
+        particle.tilt = Math.floor(Math.random() * 10) - 20;
+      });
+
+      requestAnimationFrame(Draw); // Continue animating
+    }
+
+    // Initialize the confetti particles and canvas on load
+    function init() {
+      canvas.width = W;
+      canvas.height = H;
+      for (let i = 0; i < maxConfettis; i++) {
+        particles.push(new confettiParticle());
+      }
+      Draw();
+
+      // Initialize birthday message and candles
+      var url = new URL(window.location.href);
+      appendCandles(url.searchParams.get("candles"));
+      appendName(url.searchParams.get("name"));
+      appendMessages(url.searchParams.getAll("message"));
+    }
+
+    // Resize handling
+    window.addEventListener("resize", function () {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W;
+      canvas.height = H;
+    }, false);
+
+    // Initialize confetti when the page is loaded
+    init();
+
+function appendMessages(messages) {
+  if (!Array.isArray(messages) || messages.length == 0) return;
+
+  let messageBox = document.getElementById("message_container");
+  if (!messageBox) return;
+
+  messageBox.innerHTML = `${messages.join("<br />")}`;
+
+}
+
+function appendName(message) {
+  let messageBox = document.getElementById("message_container");
+  if (!messageBox) return;
+
+  messageBox.innerHTML = `To the one and only Syca Jamela, Happy Birthday!<br /> Every candle is a chapter of your story. Blow them out and let's wish for an even brighter year ahead. <br /> <br /><small>~ Rico</small>`;S
+  
+}
+
+function appendCandles(candlesCount) {
+  if (candlesCount == null) candlesCount = 21;
+
+  let cakeDiv = document.querySelector('.cake');
+  if (!cakeDiv) return;
+
+  let candleHalfCount = 1;
+  for (var i = 0; i < candlesCount; i++) {
+    if ((i + 1) < (candlesCount / 2)) candleHalfCount++;
+    else if ((i + 1) > (candlesCount / 2)) candleHalfCount--;
+
+    let candleXPositionOffset = candleHalfCount * (20 / (candlesCount / 2));
+    let candleXPosition = ((-310 + (600 / candlesCount) / 2) + ((600 / candlesCount) * i));
+    let candleYPosition = -1 * Math.floor(Math.random() * ((325 + candleXPositionOffset) - (320 - candleXPositionOffset) + 1) + (320 - candleXPositionOffset));
+
+    let candle = document.createElement('div');
+    candle.classList.add('candle');
+    candle.style.marginLeft = `${candleXPosition}px`;
+    candle.style.marginTop = `${candleYPosition}px`;
+    candle.setAttribute("onClick", `putOutCandle("candle_${i}");`);
+    
+    for (var j = 0; j < 5; j++) {
+      let flame = document.createElement('div');
+      flame.classList.add('flame');
+      candle.appendChild(flame);
+    }
+
+    cakeDiv.appendChild(candle);
+  }
+}
+
+function putOutCandle(candle_name) {
+  if (candle_name == null) return;
+
+  let candle = document.getElementById(candle_name);
+
+  for (var i = 0; i < 5; i++) {
+    var flame = candle.querySelector(`.flame`);
+
+    if (flame != null) {
+      flame.remove();
+    }
+  }
+}
+
+function putOutCandles() {
+  let candles = document.getElementsByClassName("candle");
+  if (!candles) return;
+
+  for (var i = 0; i < candles.length; i++) {
+    putOutCandle(document.getElementById(`candle_${i}`));
+  }
+}
+
+    // Blow out all candles (optional)
+    function putOutCandles() {
+      let candles = document.querySelectorAll('.candle');
+      candles.forEach((candle) => {
+        let flames = candle.querySelectorAll('.flame');
+        flames.forEach(flame => flame.remove()); // Remove flames from all candles
+      });
+    }
+  </script>
+</body>
+</html>
